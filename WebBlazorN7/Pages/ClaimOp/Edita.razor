@@ -1,0 +1,235 @@
+﻿@page "/claimop/edita/{type}"
+
+@using static WebBlazorN7.Components.Dialog;
+@using static WebBlazorN7.Pages.ClaimOp.InsereUser;
+
+@inject Services.IClaimService ClaimService
+@using WebBlazorN7.ViewModel;
+@inject NavigationManager NavigationManager
+
+<h3>Edição de Claim</h3>
+
+<EditForm Model="@claim" OnValidSubmit="EditarClaim">
+	<DataAnnotationsValidator />
+	<Blazorise.ValidationSummary />
+
+	<div class="row">
+		<div class="col-md-2">
+			<label for="type" class="form-label">Type</label>
+			<InputText Id="type" @bind-Value="@claim.Type" class="form-control" />
+			<ValidationMessage For="@(()=> claim.Type)" />
+		</div>
+
+		<div class="col-md-4" style="padding-top: 30px;">
+			<input type="submit" class="btn btn-primary" value="Salvar" />
+			<input type="button" class="btn btn-secondary" @onclick="@Cancel" value="Voltar" />
+		</div>
+	</div>
+
+	<hr />
+
+	<button class="btn btn-outline-info mb-3" type="button" @onclick="() => InsereClaimUsuario()">
+		Inserir Usuário
+	</button>
+
+	@if (claimUsers == null)
+	{
+		<p><em>Claim não possui usuário(s).</em></p>
+	}
+	else
+	{
+		<table class="table table-striped align-middle table-bordered">
+			<thead class="table-success">
+				<tr>
+					<th>ID</th>
+					<th>First Name</th>
+					<th>E-mail</th>
+					<th>Claim Value</th>
+					<th class="col-md-3"></th>
+				</tr>
+			</thead>
+			<tbody>
+				@foreach (var claimUser in claimUsers)
+				{
+					<tr>
+						<td>@claimUser.UserResponse.Id</td>
+						<td>@claimUser.UserResponse.FirstName</td>
+						<td>@claimUser.UserResponse.Email</td>
+						<td>
+							<div class="input-group">
+								<InputText Id="value" @bind-Value="@claimUser.Value" class="form-control" disabled="@(userId.Equals(claimUser.UserResponse.Id) ? IsDisabled : true)" aria-describedby="button-addon2" />
+								<button class="btn btn-outline-secondary @(userId.Equals(claimUser.UserResponse.Id) ? IsDisabled ? "" : "d-none" : "")" type="button" id="button-addon2" @onclick="() => EditaClaimUsuario(claimUser.UserResponse.Id)" title="Editar Claim Value">
+									<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil" viewBox="0 0 16 16">
+										<path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z" />
+									</svg>
+								</button>
+
+								<button class="btn btn-outline-info @(userId.Equals(claimUser.UserResponse.Id) ? IsDisabled ? "d-none" : "" : "d-none")" type="button" id="button-addon2" @onclick="() => SalvaClaimUsuario(claimUser.UserResponse.Id)" title="Salvar Claim Value">
+									<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-save" viewBox="0 0 16 16">
+										<path d="M2 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H9.5a1 1 0 0 0-1 1v7.293l2.646-2.647a.5.5 0 0 1 .708.708l-3.5 3.5a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L7.5 9.293V2a2 2 0 0 1 2-2H14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h2.5a.5.5 0 0 1 0 1H2z" />
+									</svg>
+								</button>
+
+								<button class="btn btn-outline-danger @(userId.Equals(claimUser.UserResponse.Id) ? IsDisabled ? "d-none" : "" : "d-none")" type="button" id="button-addon2" @onclick="() => CancelaClaimUsuario()" title="Cancelar Edição Claim Value">
+									<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x-octagon" viewBox="0 0 16 16">
+										<path d="M4.54.146A.5.5 0 0 1 4.893 0h6.214a.5.5 0 0 1 .353.146l4.394 4.394a.5.5 0 0 1 .146.353v6.214a.5.5 0 0 1-.146.353l-4.394 4.394a.5.5 0 0 1-.353.146H4.893a.5.5 0 0 1-.353-.146L.146 11.46A.5.5 0 0 1 0 11.107V4.893a.5.5 0 0 1 .146-.353L4.54.146zM5.1 1 1 5.1v5.8L5.1 15h5.8l4.1-4.1V5.1L10.9 1H5.1z" />
+										<path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z" />
+									</svg>
+								</button>
+							</div>
+						</td>
+						<td class="col-md-3 text-center">
+							<button class="btn btn-outline-danger" type="button" id="button-addon2" @onclick="() => ExcluiClaimUsuario(claimUser.UserResponse.Id)">
+								Excluir
+							</button>
+						</td>
+					</tr>
+				}
+			</tbody>
+
+		</table>
+	}
+
+</EditForm>
+
+@if (DialogIsOpen)
+{
+	<Dialog Caption="Alteração de Claim/Usuário"
+		Message="@message"
+		OnClose="@OnDialogClose"
+		Type="@category">
+	</Dialog>
+}
+
+@if (DialogUserIsOpen)
+{
+	<InsereUser OnClose="@OnDialogUserClose" Type="@claimType" Users="@users"></InsereUser>
+}
+
+@code {
+	[Parameter]
+	public string? type { get; set; }
+
+	private MarkupString message;
+	private bool DialogIsOpen = false;
+	private Category category;
+	private List<int>? users;
+
+	private bool DialogUserIsOpen = false;
+	private string? claimType;
+
+	private ClaimPutViewModel claim = new ClaimPutViewModel();
+	List<ClaimUserViewModel> claimUsers = new List<ClaimUserViewModel>();
+	string oldType = string.Empty;
+	protected bool IsDisabled { get; set; }
+	int userId = 0;
+	int userDeleteId = 0;
+
+	protected override async Task OnInitializedAsync()
+	{
+		IsDisabled = true;
+
+		claim.Type = type;
+		oldType = type;
+
+		await CarregaClaimUsuarios();
+	}
+
+	async Task EditarClaim()
+	{
+		var retorno = await ClaimService.PutType(oldType, claim.Type);
+	}
+
+	async Task CarregaClaimUsuarios()
+	{
+		var retornoClaimUsers = await ClaimService.GetUsersByClaim(claim.Type);
+		claimUsers = retornoClaimUsers.Item1;
+		if (claimUsers == null || claimUsers.Count.Equals(0))
+			NavigationManager.NavigateTo("claimop/lista");
+	}
+
+	void EditaClaimUsuario(int userId)
+	{
+		if (this.userId != 0)
+		{
+			return;
+		}
+
+		this.userId = userId;
+		IsDisabled = false;
+	}
+
+	async Task SalvaClaimUsuario(int userId)
+	{
+		var claimUser = claimUsers.SingleOrDefault(x => x.UserResponse.Id.Equals(userId));
+
+		if (claimUser == null) return;
+
+		var retorno = await ClaimService.PutValue(userId, claim.Type, claimUser.Value);
+
+		this.userId = 0;
+		IsDisabled = true;
+	}
+
+	void CancelaClaimUsuario()
+	{
+		this.userId = 0;
+		IsDisabled = true;
+	}
+
+	void ExcluiClaimUsuario(int userId)
+	{
+		this.userDeleteId = userId;
+		OpenDialog((MarkupString)"Deseja mesmo deletar o usuário da claim?", Category.DeleteNot);
+	}
+
+	void OpenDialog(MarkupString message, Category category)
+	{
+		this.DialogIsOpen = true;
+		this.message = message;
+		this.category = category;
+	}
+
+	async Task OnDialogClose(bool isOk)
+	{
+		DialogIsOpen = false;
+
+		if (isOk)
+		{
+			if (category.Equals(Category.DeleteNot))
+			{
+				if (this.userId.Equals(userDeleteId))
+					this.userId = 0;
+
+				var retorno = await ClaimService.DeleteTypeUser(claim.Type, userDeleteId);
+				await CarregaClaimUsuarios();
+			}
+		}
+	}
+
+	void InsereClaimUsuario()
+	{
+		this.DialogUserIsOpen = true;
+		this.claimType = claim.Type;
+		this.users = claimUsers.Select(x => x.UserResponse.Id).ToList();
+	}
+
+	async Task OnDialogUserClose(EventCallbackArgs eventCallbackArgs)
+	{
+		DialogUserIsOpen = false;
+
+		if (eventCallbackArgs.IsOk)
+		{
+			if (eventCallbackArgs.ClaimViewModel != null)
+			{
+				var retorno = await ClaimService.Add(eventCallbackArgs.ClaimViewModel);
+				await CarregaClaimUsuarios();
+			}
+		}
+	}
+
+	void Cancel()
+	{
+		NavigationManager.NavigateTo("claimop/lista");
+	}
+}

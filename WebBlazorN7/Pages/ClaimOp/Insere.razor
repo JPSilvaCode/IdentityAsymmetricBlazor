@@ -1,0 +1,100 @@
+﻿@page "/claimop/insere"
+
+@inject Services.IClaimService ClaimService
+@inject Services.IUserService UserService
+@using WebBlazorN7.ViewModel;
+@inject NavigationManager NavigationManager
+
+<h3>Inserção de Claim</h3>
+
+<EditForm Model="@ClaimViewModel" OnValidSubmit="InserirClaim">
+	<DataAnnotationsValidator />
+	<Blazorise.ValidationSummary />
+
+	<div class="row mb-3">
+
+		<div class="col-md-1">
+			<label class="form-label">Novo</label>
+			<InputCheckbox class="form-check" @bind-Value="@isChecked"></InputCheckbox>
+		</div>
+
+		<div class="col-md-3">
+			<label for="type" class="form-label">Type</label>
+			@if (isChecked)
+			{
+				<InputText Id="type" @bind-Value="@ClaimViewModel.Type" class="form-control" />
+			}
+			else
+			{
+				<InputSelect class="form-select" @bind-Value="ClaimViewModel.Type">
+					<option value="">Selecione...</option>
+					@if (claims != null)
+					{
+						@foreach (var claim in claims)
+						{
+							<option value="@claim.Type"> @claim.Type </option>
+						}
+					}
+				</InputSelect>
+			}
+			<ValidationMessage For="@(()=> ClaimViewModel.Type)" />
+		</div>
+
+		<div class="col-md-3">
+			<label for="value" class="form-label">Value</label>
+			<InputText Id="value" @bind-Value="@ClaimViewModel.Value" class="form-control" />
+			<ValidationMessage For="@(()=> ClaimViewModel.Value)" />
+		</div>
+
+		<div class="col-md-5">
+			<label for="value" class="form-label">Usuário</label>
+			<InputSelect class="form-select" @bind-Value="ClaimViewModel.UserId">
+				<option value="">Selecione...</option>
+				@if (usuarios != null)
+					@foreach (var usuario in usuarios)
+					{
+						<option value="@usuario.Id"> @usuario.FirstName @usuario.LastName (@usuario.Email) </option>
+					}
+				}
+			</InputSelect>
+			<ValidationMessage For="@(()=> ClaimViewModel.UserId)" />
+		</div>
+	</div>
+
+	<div class="row">
+		<div class="col-md-4">
+			<div class="form-group">
+				<input type="submit" class="btn btn-primary" value="Salvar" />
+				<input type="button" class="btn btn-danger" @onclick="@Cancel" value="Cancelar" />
+			</div>
+		</div>
+	</div>
+</EditForm>
+
+@code {
+	private ClaimViewModel ClaimViewModel = new ClaimViewModel();
+	List<Usuario> usuarios = new List<Usuario>();
+	List<ClaimViewModel> claims = new List<ClaimViewModel>();
+
+	private bool isChecked = true;
+
+	protected override async Task OnInitializedAsync()
+	{
+		var retornoClaim = await ClaimService.Get();
+		claims = retornoClaim.Item1;
+
+		var retornoUser = await UserService.Get();
+		usuarios = retornoUser.Item1;
+	}
+
+	protected async Task InserirClaim()
+	{
+		var retorno = await ClaimService.Add(ClaimViewModel);
+		NavigationManager.NavigateTo("claimop/lista");
+	}
+
+	void Cancel()
+	{
+		NavigationManager.NavigateTo("claimop/lista");
+	}
+}

@@ -1,0 +1,48 @@
+﻿@page "/roleop/deleta/{id:int}"
+
+@inject Services.IRoleService RoleService
+@using WebBlazorN7.ViewModel;
+@inject NavigationManager NavigationManager
+
+<h3>Confirma Exclusão ?</h3>
+<p>Deseja realmente deletar esta role com Id: <b> @id</b></p>
+
+<div class="col-md-8">
+	<table class="table">
+		<tr>
+			<td>Name</td>
+			<td>@role.Name</td>
+		</tr>		
+	</table>
+	<div class="form-group">
+		<input type="button" value="Deletar" @onclick="@Delete" class="btn btn-primary" />
+		<input type="button" value="Cancelar" @onclick="@Cancel" class="btn" />
+	</div>
+</div>
+
+@code {
+	bool Exibir = false;
+
+	[Parameter]
+	public int id { get; set; }
+
+	RoleViewModel role = new RoleViewModel();
+
+	protected override async Task OnInitializedAsync()
+	{
+		var retorno = await RoleService.Get(id);
+
+		role = retorno.Item1;
+	}
+
+	protected async Task Delete()
+	{
+		var retorno = await RoleService.Delete(role.Name);
+		NavigationManager.NavigateTo("roleop/lista");
+	}
+
+	void Cancel()
+	{
+		NavigationManager.NavigateTo("roleop/lista");
+	}
+} 

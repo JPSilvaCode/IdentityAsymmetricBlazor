@@ -1,0 +1,55 @@
+﻿@page "/roleop/lista"
+
+@using Microsoft.AspNetCore.Authorization;
+@using WebBlazorN7.ViewModel;
+@inject Services.IRoleService RoleService
+
+@attribute [Authorize]
+
+<h3>Roles</h3>
+
+<p>
+	<a href="roleop/insere" class="btn btn-outline-info">Criar Nova Role</a>
+</p>
+
+@if (roles == null)
+{
+	<p><em>Loading...</em></p>
+}
+else
+{
+	<table class="table table-striped align-middle table-bordered">
+		<thead class="table-success">
+			<tr>
+				<th>ID</th>
+				<th>Name</th>				
+				<th class="col-md-3"></th>
+			</tr>
+		</thead>
+		<tbody>
+			@foreach (var role in roles)
+			{
+				<tr>
+					<td>@role.Id</td>
+					<td>@role.Name</td>
+					<td class="col-md-3 text-center">
+						<a href='/roleop/edita/@role.Id' class="btn btn-outline-dark" role="button">Editar</a>
+						<a href='/roleop/deleta/@role.Id' class="btn btn-outline-danger" role="button">Excluir</a>
+					</td>
+				</tr>
+			}
+		</tbody>
+
+	</table>
+}
+
+@code {
+	List<RoleViewModel> roles;
+
+	protected override async Task OnInitializedAsync()
+	{	
+		var retorno = await RoleService.Get();
+
+		roles = retorno.Item1;
+	}	
+}

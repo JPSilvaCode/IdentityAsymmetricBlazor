@@ -1,0 +1,249 @@
+﻿@page "/loginI"
+@using WebBlazorN7.ViewModel;
+@using static WebBlazorN7.Components.Dialog;
+
+@inject Services.AuthServiceI authService
+@inject Services.UserService userService
+
+<PageTitle>Login</PageTitle>
+
+<h1>Login</h1>
+
+<Tabs SelectedTab="@selectedTab" SelectedTabChanged="@OnSelectedTabChanged">
+	<Items>
+		<Tab Name="login">Login</Tab>
+		<Tab Name="register">Register</Tab>
+	</Items>
+	<Content>
+		<TabPanel Name="login">
+			<Card>
+				<CardBody>
+					<CardTitle>
+						Seja Bem Vindo, Faça o Login
+					</CardTitle>
+				</CardBody>
+
+				<CardBody>
+					<Validations @ref="loginValidationsRef" Mode="ValidationMode.Manual" ValidateOnLoad="false">
+						<Validation Validator="ValidationRule.IsEmail">
+							<Field>
+								<FieldLabel>Email</FieldLabel>
+								<TextEdit @bind-Text="@email" Placeholder="Enter email...">
+									<Feedback>
+										<ValidationNone>Please Enter Your Email. </ValidationNone>
+										<ValidationSuccess>Email is good</ValidationSuccess>
+										<ValidationError>Please Enter A Valid Email</ValidationError>
+									</Feedback>
+								</TextEdit>
+							</Field>
+						</Validation>
+
+						<Validation Validator="ValidationRule.IsNotEmpty">
+							<Field>
+								<FieldLabel>Password</FieldLabel>
+								<TextEdit @bind-Text="@password" Placeholder="Enter Password..">
+									<Feedback>
+										<ValidationNone>Please Enter Your Password. </ValidationNone>
+									</Feedback>
+								</TextEdit>
+							</Field>
+						</Validation>
+
+						<Field>
+							<Check TValue="bool" @bind-Checked="@rememberMe">Remember Me</Check>
+						</Field>
+					</Validations>
+				</CardBody>
+
+				<CardBody>
+					<Button Color="Color.Primary" Clicked="@OnLoginClicked">Login</Button>
+					<Button Color="Color.Secondary">Forgot Password</Button>
+				</CardBody>
+			</Card>
+		</TabPanel>
+
+		<TabPanel Name="register">
+			<Card>
+				<CardBody>
+					<CardTitle>
+						Novo aqui? Crie sua Conta
+					</CardTitle>
+				</CardBody>
+
+				<CardBody>
+					<Validations @ref="registerValidationsRef" Mode="ValidationMode.Manual" ValidateOnLoad="false">
+						<Validation Validator="ValidationRule.IsNotEmpty">
+							<Field>
+								<FieldLabel>Primeiro Nome</FieldLabel>
+								<TextEdit @bind-Text="@firstName" Placeholder="Enter Your First Name" />
+							</Field>
+						</Validation>
+
+						<Validation Validator="ValidationRule.IsNotEmpty">
+							<Field>
+								<FieldLabel>Sobrenome</FieldLabel>
+								<TextEdit @bind-Text="@lastName" Placeholder="Enter Your Last Name" />
+							</Field>
+						</Validation>
+
+						<Validation Validator="ValidationRule.IsNotEmpty">
+							<Field>
+								<FieldLabel>CPF</FieldLabel>
+								<TextEdit @bind-Text="@itin" Placeholder="Enter Your Itin" />
+							</Field>
+						</Validation>
+
+						<Validation Validator="ValidationRule.IsEmail">
+							<Field>
+								<FieldLabel>Email</FieldLabel>
+								<TextEdit @bind-Text="@email" Placeholder="Enter Your Email">
+									<Feedback>
+										<ValidationNone>Please Enter your email.</ValidationNone>
+										<ValidationSuccess>Email is valid</ValidationSuccess>
+										<ValidationError>Enter Valid email </ValidationError>
+									</Feedback>
+								</TextEdit>
+							</Field>
+						</Validation>
+
+						<Validation Validator="ValidationRule.IsNotEmpty">
+							<Field>
+								<FieldLabel>Password</FieldLabel>
+								<TextEdit @bind-Text="@password" Placeholder="Enter Password" />
+								<FieldHelp>
+									Password Strength: <Text TextColor="TextColor.Danger">Strong</Text>
+								</FieldHelp>
+							</Field>
+						</Validation>
+
+						<Validation Validator="ValidationRule.IsNotEmpty">
+							<Field>
+								<FieldLabel>Confirm Password</FieldLabel>
+								<TextEdit @bind-Text="@confirmPassword" Placeholder="Enter Confirm Password" />
+								<FieldHelp>
+									Confirm Password Strength: <Text TextColor="TextColor.Danger">Strong</Text>
+								</FieldHelp>
+							</Field>
+						</Validation>
+					</Validations>
+				</CardBody>
+
+				<CardBody>
+					<Button Color="Color.Primary" Clicked="@OnRegisterClicked">
+						Create Account
+					</Button>
+				</CardBody>
+			</Card>
+		</TabPanel>
+	</Content>
+</Tabs>
+
+@if (DialogIsOpen)
+{
+	<Dialog Caption="Registro de Usuário"
+		Message="@message"
+		OnClose="@OnDialogClose"
+		Type="@category">
+	</Dialog>
+}
+
+@code {
+	Validations? loginValidationsRef;
+	Validations? registerValidationsRef;
+
+	private MarkupString message;
+	private bool DialogIsOpen = false;
+	private Category category;
+
+	string selectedTab = "login";
+	string email = string.Empty;
+	string password = string.Empty;
+	string confirmPassword = string.Empty;
+	string firstName = string.Empty;
+	string lastName = string.Empty;
+	string itin = string.Empty;
+	bool rememberMe;
+
+	private Task OnSelectedTabChanged(string name)
+	{
+		selectedTab = name;
+
+		return Task.CompletedTask;
+	}
+
+	async Task OnLoginClicked()
+	{
+		if (loginValidationsRef == null) return;
+
+		if (await loginValidationsRef.ValidateAll())
+		{
+			var retorno = await authService.Login(email, password);
+
+			LoginResponse usuario = retorno.Item1;
+			Erro erro = retorno.Item2;
+			if (usuario is not null)
+			{
+
+			}
+			else if (erro is not null)
+			{
+
+			}
+
+			await loginValidationsRef.ClearAll();
+		}
+	}
+
+	async Task OnRegisterClicked()
+	{
+		if (registerValidationsRef == null) return;
+
+		if (await registerValidationsRef.ValidateAll())
+			OpenDialog((MarkupString)"Deseja mesmo registrar o usuário?", Category.SaveNot);
+	}
+
+	void OpenDialog(MarkupString message, Category category)
+	{
+		this.DialogIsOpen = true;
+		this.message = message;
+		this.category = category;
+	}
+
+	async Task OnDialogClose(bool isOk)
+	{
+		DialogIsOpen = false;
+
+		if (isOk)
+		{
+			if (category.Equals(Category.SaveNot))
+			{
+				var registro = new RegistroRequest
+					{
+						firstName = firstName,
+						lastName = lastName,
+						itin = itin,
+						email = email,
+						password = password,
+						confirmPassword = confirmPassword
+					};
+
+				var retorno = await userService.Register(registro);
+
+				RegistroResponse registroResponse = retorno.Item1;
+				Erro erro = retorno.Item2;
+				if (registroResponse is not null)
+				{
+					OpenDialog((MarkupString)"Usuário registrado com sucesso.", Category.Okay);
+				}
+				else if (erro is not null)
+				{
+					var mensagem = (MarkupString)$"Ocorreu algum erro ao registrar o usuário: <br /> {erro.title}: <br /> {erro.errors.ToString()}";
+					OpenDialog(mensagem, Category.Okay);
+				}
+
+				if (registerValidationsRef == null) return;
+				await registerValidationsRef.ClearAll();
+			}
+		}
+	}
+}

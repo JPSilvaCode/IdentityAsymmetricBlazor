@@ -1,0 +1,109 @@
+﻿@page "/roleop/edita/{id:int}"
+
+@inject Services.IRoleService RoleService
+@inject Services.IUserService UserService
+@using WebBlazorN7.ViewModel;
+@inject NavigationManager NavigationManager
+
+<h3>Edição de Role</h3>
+
+<EditForm Model="@role" OnValidSubmit="EditarRole">
+	<DataAnnotationsValidator />
+	<Blazorise.ValidationSummary />
+
+	<div class="row mb-3">
+		<div class="col-md-1">
+			<label for="id" class="form-label">Id</label>
+			<InputNumber Id="id" @bind-Value="@role.Id" class="form-control" disabled />
+		</div>
+
+		<div class="col-md-5">
+			<label for="name" class="form-label">Name</label>
+			<InputText Id="name" @bind-Value="@role.Name" class="form-control" />
+			<ValidationMessage For="@(()=> role.Name)" />
+		</div>
+	</div>
+
+	<table class="table table-striped align-middle table-bordered">
+		<thead class="table-success">
+			<tr>
+				<th class="col-sm-1"></th>
+				<th>ID</th>
+				<th>First Name</th>
+				<th>E-mail</th>
+			</tr>
+		</thead>
+		<tbody>
+			@foreach (var usuario in usuarios)
+			{
+				<tr>
+					<td class="text-center">
+						<InputCheckbox @bind-Value="@usuario.Selecao"></InputCheckbox>
+					</td>
+					<td>@usuario.Id</td>
+					<td>@usuario.FirstName</td>
+					<td>@usuario.Email</td>
+				</tr>
+			}
+		</tbody>
+	</table>
+
+	<div class="row">
+		<div class="col-md-4">
+			<div class="form-group">
+				<input type="submit" class="btn btn-primary" value="Salvar" />
+				<input type="button" class="btn btn-danger" @onclick="@Cancel" value="Cancelar" />
+			</div>
+		</div>
+	</div>
+</EditForm>
+
+@code {
+	[Parameter]
+	public int id { get; set; }
+
+	RoleViewModel role = new RoleViewModel();
+	string oldName = string.Empty;
+	List<Usuario> usuarios = new List<Usuario>();
+
+	protected override async Task OnInitializedAsync()
+	{
+		var retorno = await RoleService.Get(id);
+
+		role = retorno.Item1;
+		if (role != null)
+			oldName = role.Name;
+
+		var retornoUsersByRole = await RoleService.GetUsers(id);
+		var usersByRole = retornoUsersByRole.Item1.UsersResponse;
+		if (role != null)
+			role.UsersResponse = usersByRole;
+
+		var retornoUser = await UserService.Get();
+		usuarios = retornoUser.Item1;
+
+		if (usersByRole != null)
+			usuarios.ForEach(x => x.Selecao = usersByRole.Count(y => y.Id.Equals(x.Id)) > 0);
+	}
+
+	protected async Task EditarRole()
+	{
+		var retorno = await RoleService.Put(oldName, role.Name);
+
+		foreach (var usuario in usuarios)
+		{
+			if (usuario.Selecao && (role.UsersResponse == null || role.UsersResponse.Count(x => x.Id.Equals(usuario.Id)).Equals(0)))
+				await RoleService.AddUser(role.Id, usuario.Id);
+
+			if (!usuario.Selecao && role.UsersResponse != null && role.UsersResponse.Count(x => x.Id.Equals(usuario.Id)).Equals(1))
+				await RoleService.DeleteUser(role.Id, usuario.Id);
+		}
+
+		NavigationManager.NavigateTo("roleop/lista");
+	}
+
+	void Cancel()
+	{
+		NavigationManager.NavigateTo("roleop/lista");
+	}
+}

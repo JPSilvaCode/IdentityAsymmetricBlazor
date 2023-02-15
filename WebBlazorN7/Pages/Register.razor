@@ -1,0 +1,94 @@
+﻿@page "/register"
+@using WebBlazorN7.ViewModel;
+@inject Services.IUserService UserService
+@inject NavigationManager NavigationManager
+
+<h1>Register</h1>
+
+@if (ShowErrors)
+{
+	<div class="alert alert-danger" role="alert">
+		@foreach (var error in Errors)
+		{
+			<p>@error</p>
+		}
+	</div>
+}
+
+<div class="card">
+	<div class="card-body">
+		<h5 class="card-title">Please enter your details</h5>
+		<EditForm Model="RegisterModel" OnValidSubmit="HandleRegistration">
+			<DataAnnotationsValidator />
+			<Blazorise.ValidationSummary />
+
+			<div class="mb-3">
+				<label for="firstName" class="form-label">First Name</label>
+				<InputText Id="firstName" class="form-control" @bind-Value="RegisterModel.firstName" />
+				<ValidationMessage For="@(() => RegisterModel.firstName)" />
+			</div>
+
+			<div class="mb-3">
+				<label for="lastName" class="form-label">Last Name</label>
+				<InputText Id="lastName" class="form-control" @bind-Value="RegisterModel.lastName" />
+				<ValidationMessage For="@(() => RegisterModel.lastName)" />
+			</div>
+
+			<div class="mb-3">
+				<label for="itin" class="form-label">ITIN</label>
+				<InputText Id="itin" class="form-control" @bind-Value="RegisterModel.itin" />
+				<ValidationMessage For="@(() => RegisterModel.itin)" />
+			</div>
+
+			<div class="mb-3">
+				<label for="email" class="form-label">Email address</label>
+				<InputText Id="email" class="form-control" @bind-Value="RegisterModel.email" />
+				<ValidationMessage For="@(() => RegisterModel.email)" />
+			</div>
+
+			<div class="mb-3">
+				<label for="password" class="form-label">Password</label>
+				<InputText Id="password" type="password" class="form-control" @bind-Value="RegisterModel.password" />
+				<ValidationMessage For="@(() => RegisterModel.password)" />
+			</div>
+
+			<div class="mb-3">
+				<label for="confirmpassword" class="form-label">Confirm Password</label>
+				<InputText Id="confirmpassword" type="password" class="form-control" @bind-Value="RegisterModel.confirmPassword" />
+				<ValidationMessage For="@(() => RegisterModel.confirmPassword)" />
+			</div>
+
+			<button type="submit" class="btn btn-primary">Submit</button>
+		</EditForm>
+	</div>
+</div>
+
+@code {
+
+	private RegistroRequest RegisterModel = new RegistroRequest();
+	private bool ShowErrors;
+	private IEnumerable<string> Errors;
+
+	private async Task HandleRegistration()
+	{
+		ShowErrors = false;
+
+		var retorno = await UserService.Register(RegisterModel);
+
+		RegistroResponse registroResponse = retorno.Item1;
+		Erro erro = retorno.Item2;
+
+		if (registroResponse is not null)
+		{
+			NavigationManager.NavigateTo("/login");
+		}
+		else if (erro is not null)
+		{
+			Errors = erro.errors.Messages;
+			if (Errors == null)
+				Errors = erro.errors.ConfirmPassword;
+			ShowErrors = true;
+		}
+	}
+
+}

@@ -1,0 +1,60 @@
+﻿@page "/userop/deleta/{id:int}"
+
+@inject Services.IUserService UserService
+@using WebBlazorN7.ViewModel;
+@inject NavigationManager NavigationManager
+
+<h3>Confirma Exclusão ?</h3>
+<p>Deseja realmente deletar este usuário com Id: <b> @id</b></p>
+
+<div class="col-md-8">
+	<table class="table">
+		<tr>
+			<td>First Name</td>
+			<td>@usuario.FirstName</td>
+		</tr>
+		<tr>
+			<td>Last Name</td>
+			<td>@usuario.LastName</td>
+		</tr>
+		<tr>
+			<td>ITIN</td>
+			<td>@usuario.ITIN</td>
+		</tr>
+		<tr>
+			<td>Email</td>
+			<td>@usuario.Email</td>
+		</tr>
+	</table>
+	<div class="form-group">
+		<input type="button" value="Deletar" @onclick="@Delete" class="btn btn-primary" />
+		<input type="button" value="Cancelar" @onclick="@Cancel" class="btn" />
+	</div>
+</div>
+
+@code {
+	bool Exibir = false;
+
+	[Parameter]
+	public int id { get; set; }
+
+	Usuario usuario = new Usuario();
+
+	protected override async Task OnInitializedAsync()
+	{
+		var retorno = await UserService.Get(id);
+
+		usuario = retorno.Item1;
+	}
+
+	protected async Task Delete()
+	{
+		var retorno = await UserService.Delete(usuario.Email);
+		NavigationManager.NavigateTo("userop/lista");
+	}
+
+	void Cancel()
+	{
+		NavigationManager.NavigateTo("userop/lista");
+	}
+} 

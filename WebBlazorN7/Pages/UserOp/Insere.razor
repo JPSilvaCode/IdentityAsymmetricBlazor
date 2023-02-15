@@ -1,0 +1,232 @@
+﻿@page "/userop/insere"
+
+@using static WebBlazorN7.Components.Dialog;
+
+@inject Services.IUserService UserService
+@inject Services.IRoleService RoleService
+@inject Services.IClaimService ClaimService
+@using WebBlazorN7.ViewModel;
+@inject NavigationManager NavigationManager
+
+<h3>Inserção de Usuário</h3>
+
+<EditForm Model="@RegisterModel" OnValidSubmit="InserirUsuario">
+	<DataAnnotationsValidator />
+	<Blazorise.ValidationSummary />
+
+	<div class="row mb-3">
+		<div class="col-md-5">
+			<label for="firstName" class="form-label">First Name</label>
+			<InputText Id="firstName" @bind-Value="@RegisterModel.firstName" class="form-control" />
+			<ValidationMessage For="@(()=> RegisterModel.firstName)" />
+		</div>
+
+		<div class="col-md-4">
+			<label for="lastName" class="form-label">Last Name</label>
+			<InputText Id="lastName" @bind-Value="@RegisterModel.lastName" class="form-control" />
+			<ValidationMessage For="@(()=> RegisterModel.lastName)" />
+		</div>
+
+		<div class="col-md-3">
+			<label for="itin" class="form-label">Itin</label>
+			<InputText Id="itin" class="form-control" @bind-Value="RegisterModel.itin" />
+			<ValidationMessage For="@(() => RegisterModel.itin)" />
+		</div>
+
+	</div>
+
+	<div class="row mb-3">
+		<div class="col-md-6">
+			<label for="email" class="form-label">Email address</label>
+			<InputText Id="email" class="form-control" @bind-Value="RegisterModel.email" />
+			<ValidationMessage For="@(() => RegisterModel.email)" />
+		</div>
+
+		<div class="col-md-3">
+			<label for="password" class="form-label">Password</label>
+			<InputText Id="password" type="password" class="form-control" @bind-Value="RegisterModel.password" />
+			<ValidationMessage For="@(() => RegisterModel.password)" />
+		</div>
+
+		<div class="col-md-3">
+			<label for="confirmpassword" class="form-label">Confirm Password</label>
+			<InputText Id="confirmpassword" type="password" class="form-control" @bind-Value="RegisterModel.confirmPassword" />
+			<ValidationMessage For="@(() => RegisterModel.confirmPassword)" />
+		</div>
+	</div>
+
+	<div class="row mb-3">
+		<div class="col-md-6">
+			<div class="accordion" id="accordionRole">
+				<div class="accordion-item">
+					<h2 class="accordion-header" id="headingOne">
+						<button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+							Roles
+						</button>
+					</h2>
+					<div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordionRole">
+						<div class="accordion-body">
+							@if (roles == null)
+							{
+								<p><em>Loading...</em></p>
+							}
+							else
+							{
+								<table class="table table-striped align-middle table-bordered">
+									<thead class="table-success">
+										<tr>
+											<th class="col-sm-1"></th>
+											<th>ID</th>
+											<th>Name</th>
+										</tr>
+									</thead>
+									<tbody>
+										@foreach (var role in roles.OrderBy(x => x.Id))
+										{
+											<tr>
+												<td class="text-center">
+													<InputCheckbox @bind-Value="@role.Selecao"></InputCheckbox>
+												</td>
+												<td>@role.Id</td>
+												<td>@role.Name</td>
+											</tr>
+										}
+									</tbody>
+
+								</table>
+							}
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="col-md-6">
+			<div class="accordion" id="accordionClaim">
+				<div class="accordion-item">
+					<h2 class="accordion-header" id="headingOne">
+						<button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="true" aria-controls="collapseTwo">
+							Claims
+						</button>
+					</h2>
+					<div id="collapseTwo" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordionClaim">
+						<div class="accordion-body">
+							@if (claims == null)
+							{
+								<p><em>Loading...</em></p>
+							}
+							else
+							{
+								<table class="table table-striped align-middle table-bordered">
+									<thead class="table-success">
+										<tr>
+											<th class="col-sm-1"></th>
+											<th>Type</th>
+											<th>Value</th>
+										</tr>
+									</thead>
+									<tbody>
+										@foreach (var claim in claims.OrderBy(x => x.Type))
+										{
+											<tr>
+												<td class="text-center">
+													<InputCheckbox @bind-Value="@claim.Selecao"></InputCheckbox>
+												</td>
+												<td>@claim.Type</td>
+												<td>
+													<InputText Id="value" @bind-Value="@claim.Value" class="form-control" />
+												</td>
+											</tr>
+										}
+									</tbody>
+
+								</table>
+							}
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="row">
+		<div class="col-md-4">
+			<div class="form-group">
+				<input type="submit" class="btn btn-primary" value="Salvar" />
+				<input type="button" class="btn btn-danger" @onclick="@Cancel" value="Cancelar" />
+			</div>
+		</div>
+	</div>
+</EditForm>
+
+@if (DialogIsOpen)
+{
+	<Dialog Caption="Alteração de Claim/Usuário"
+		Message="@message"
+		OnClose="@OnDialogClose"
+		Type="@category">
+	</Dialog>
+}
+
+@code {
+	private RegistroRequest RegisterModel = new RegistroRequest();
+
+	private MarkupString message;
+	private bool DialogIsOpen = false;
+	private Category category;
+
+	List<RoleViewModel> roles = new List<RoleViewModel>();
+	List<ClaimViewModel> claims = new List<ClaimViewModel>();
+
+	protected override async Task OnInitializedAsync()
+	{
+		var retornoRoles = await RoleService.Get();
+		roles = retornoRoles.Item1;
+
+		var retornoClaims = await ClaimService.Get();
+		claims = retornoClaims.Item1;
+	}
+
+	protected async Task InserirUsuario()
+	{
+		if (claims.Count(x => x.Selecao && string.IsNullOrEmpty(x.Value)) > 0)
+		{
+			OpenDialog((MarkupString)$"Não é possivel prosseguir com claim selecionada sem o Value.<br /> {string.Join("<br />", claims.Where(x => x.Selecao && string.IsNullOrEmpty(x.Value)).Select(x => $"Type: {x.Type}"))}", Category.Okay);
+			return;
+		}
+
+		var retorno = await UserService.Register(RegisterModel);
+		var usuario = retorno.Item1;
+
+		foreach (var role in roles)
+		{
+			if (role.Selecao)
+				await UserService.AddRole(usuario.Id, role.Id);
+		}
+
+		foreach (var claim in claims)
+		{
+			if (claim.Selecao)
+				await UserService.AddClaim(usuario.Id, claim.Type, claim.Value);
+		}
+
+		NavigationManager.NavigateTo("userop/lista");
+	}
+
+	void OpenDialog(MarkupString message, Category category)
+	{
+		this.DialogIsOpen = true;
+		this.message = message;
+		this.category = category;
+	}
+
+	void OnDialogClose(bool isOk)
+	{
+		DialogIsOpen = false;
+	}
+
+	void Cancel()
+	{
+		NavigationManager.NavigateTo("userop/lista");
+	}
+}

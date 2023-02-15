@@ -1,0 +1,44 @@
+﻿@page "/claimop/deleta/{type}"
+
+@inject Services.IClaimService ClaimService
+@using WebBlazorN7.ViewModel;
+@inject NavigationManager NavigationManager
+
+<h3>Confirma Exclusão ?</h3>
+<p>Deseja realmente deletar esta role com Type: <b> @type</b></p>
+
+<div class="col-md-8">
+	<table class="table">
+		<tr>
+			<td>Type</td>
+			<td>@claim.Type</td>
+		</tr>
+	</table>
+	<div class="form-group">
+		<input type="button" value="Deletar" @onclick="@Delete" class="btn btn-primary" />
+		<input type="button" value="Cancelar" @onclick="@Cancel" class="btn" />
+	</div>
+</div>
+
+@code {
+	[Parameter]
+	public string? type { get; set; }
+
+	ClaimViewModel claim = new ClaimViewModel();
+
+	protected override void OnInitialized()
+	{
+		claim.Type = type;
+	}
+
+	protected async Task Delete()
+	{
+		var retorno = await ClaimService.DeleteType(claim.Type);
+		NavigationManager.NavigateTo("claimop/lista");
+	}
+
+	void Cancel()
+	{
+		NavigationManager.NavigateTo("claimop/lista");
+	}
+} 

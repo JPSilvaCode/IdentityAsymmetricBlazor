@@ -1,0 +1,69 @@
+﻿@page "/login"
+@using WebBlazorN7.ViewModel;
+@inject Services.IAuthService AuthService
+@inject NavigationManager NavigationManager
+
+<h1>Login</h1>
+
+@if (ShowErrors)
+{
+	<div class="alert alert-danger" role="alert">
+		@foreach (var error in Errors)
+		{
+			<p>@error</p>
+		}
+	</div>
+}
+
+<div class="card">
+	<div class="card-body">
+		<h5 class="card-title">Please enter your details</h5>
+		<EditForm Model="loginModel" OnValidSubmit="HandleLogin">
+			<DataAnnotationsValidator />
+			<Blazorise.ValidationSummary />
+
+			<div class="mb-3">
+				<label for="email" class="form-label">Email address</label>
+				<InputText Id="email" Class="form-control" @bind-Value="loginModel.Email" />
+				<ValidationMessage For="@(() => loginModel.Email)" />
+			</div>
+
+			<div class="mb-3">
+				<label for="password" class="form-label">Password</label>
+				<InputText Id="password" type="password" Class="form-control" @bind-Value="loginModel.Password" />
+				<ValidationMessage For="@(() => loginModel.Password)" />
+			</div>
+
+			<button type="submit" class="btn btn-primary">Submit</button>
+		</EditForm>
+	</div>
+</div>
+
+@code {
+
+	private LoginRequest loginModel = new LoginRequest();
+	private bool ShowErrors;
+	private IEnumerable<string> Errors;
+
+	private async Task HandleLogin()
+	{
+		ShowErrors = false;
+
+		var retorno = await AuthService.Login(loginModel);
+
+		LoginResponse usuario = retorno.Item1;
+		Erro erro = retorno.Item2;
+		if (usuario is not null)
+		{
+			NavigationManager.NavigateTo("/");
+		}
+		else if (erro is not null)
+		{
+			Errors = erro.errors.Messages;
+			if (Errors == null)
+				Errors = erro.errors.ConfirmPassword;
+			ShowErrors = true;
+		}
+	}
+
+}

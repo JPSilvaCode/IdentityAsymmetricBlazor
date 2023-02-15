@@ -1,0 +1,97 @@
+﻿@inject Services.IUserService UserService
+@using WebBlazorN7.ViewModel;
+
+<div class="modal fade show modal-lg" id="myModal" style="display:block; background-color: rgba(10,10,10,.8);" aria-modal="true" role="dialog">
+	<div class="modal-dialog">
+		<div class="modal-content">
+
+			<EditForm Model="@claim" OnValidSubmit="Ok">
+				<DataAnnotationsValidator />
+				<Blazorise.ValidationSummary />
+
+				<div class="modal-header">
+					<h4 class="modal-title">Inserção de Usuário na Claim</h4>
+					<button type="button" class="close" @onclick="@Cancel">
+						&times;
+					</button>
+				</div>
+
+				<div class="modal-body">
+
+					<div class="row">
+						<div class="col-md-3">
+							<label for="type" class="form-label">Type</label>
+							<InputText Id="type" @bind-Value="@claim.Type" class="form-control" disabled />
+						</div>
+
+						<div class="col-md-3">
+							<label for="value" class="form-label">Value</label>
+							<InputText Id="value" @bind-Value="@claim.Value" class="form-control" />
+							<ValidationMessage For="@(()=> claim.Value)" />
+						</div>
+
+						<div class="col-md-6">
+							<label for="value" class="form-label">Usuário</label>
+							<InputSelect class="form-select" @bind-Value="claim.UserId">
+								<option value="">Selecione...</option>
+								@if (usuarios != null)
+									@foreach (var usuario in usuarios)
+									{
+										<option value="@usuario.Id"> @usuario.FirstName @usuario.LastName (@usuario.Email) </option>
+									}
+								}
+							</InputSelect>
+							<ValidationMessage For="@(()=> claim.UserId)" />
+						</div>
+					</div>
+
+				</div>
+
+				<div class="modal-footer">
+
+					<button type="submit" class="btn btn-primary">
+						Save
+					</button>
+					<button type="button" class="btn btn-warning" @onclick="@Cancel">
+						Don't Save
+					</button>
+
+				</div>
+
+			</EditForm>
+
+		</div>
+	</div>
+</div>
+
+@code {
+	[Parameter] public string? Type { get; set; }
+	[Parameter] public EventCallback<EventCallbackArgs> OnClose { get; set; }
+	[Parameter] public List<int>? Users { get; set; }
+	List<Usuario> usuarios = new List<Usuario>();
+	private ClaimViewModel claim = new ClaimViewModel();
+
+	protected override async Task OnInitializedAsync()
+	{
+		if (!string.IsNullOrEmpty(Type))
+			claim.Type = Type;
+		
+		var retornoUser = await UserService.Get();
+		if (Users != null)
+			usuarios = retornoUser.Item1.Where(x => !Users.Any(y => y.Equals(x.Id))).ToList();
+		else
+			usuarios = retornoUser.Item1;
+	}
+
+	private Task Cancel()
+	{
+		var args = new EventCallbackArgs(false, null);
+		return OnClose.InvokeAsync(args);
+	}
+
+	private Task Ok()
+	{
+		var args = new EventCallbackArgs(true, claim);
+		return OnClose.InvokeAsync(args);
+	}
+}
